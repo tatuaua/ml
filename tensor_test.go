@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"testing"
 )
 
@@ -75,5 +76,49 @@ func TestFlatten(t *testing.T) {
 
 	if len(result.Shape) != 1 || result.Shape[0] != 4 {
 		t.Errorf("expected shape [4], got %v", result.Shape)
+	}
+}
+
+func TestSoftMax(t *testing.T) {
+	tensor := &Tensor{Data: []float64{1, 2, 3}, Shape: []int{3}}
+	result, err := SoftMax(tensor)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(result.Data) != 3 {
+		t.Fatalf("expected 3 values, got %d", len(result.Data))
+	}
+
+	sum := 0.0
+	for _, value := range result.Data {
+		sum += value
+	}
+
+	if math.Abs(sum-1.0) > 1e-9 {
+		t.Fatalf("expected probabilities to sum to 1.0, got %f", sum)
+	}
+
+	if !(result.Data[2] > result.Data[1] && result.Data[1] > result.Data[0]) {
+		t.Fatalf("expected monotonic probabilities, got %v", result.Data)
+	}
+}
+
+func TestArgMax(t *testing.T) {
+	tensor := &Tensor{Data: []float64{-1, 5, 3, 5.5, 2}, Shape: []int{5}}
+	index, err := ArgMax(tensor)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if index != 3 {
+		t.Fatalf("expected argmax index 3, got %d", index)
+	}
+}
+
+func TestArgMaxEmptyTensor(t *testing.T) {
+	_, err := ArgMax(&Tensor{Data: []float64{}, Shape: []int{0}})
+	if err == nil {
+		t.Fatal("expected error for empty tensor")
 	}
 }

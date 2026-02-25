@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"math"
 )
 
 type Tensor struct {
@@ -83,4 +84,64 @@ func ReLU(t *Tensor) *Tensor {
 		}
 	}
 	return &Tensor{Data: result, Shape: t.Shape}
+}
+
+func SoftMax(t *Tensor) (*Tensor, error) {
+	if t == nil {
+		return nil, errors.New("tensor cannot be nil")
+	}
+	if len(t.Data) == 0 {
+		return nil, errors.New("tensor data cannot be empty")
+	}
+
+	resultData := make([]float64, len(t.Data))
+	exaggerated := make([]float64, len(t.Data))
+
+	maxVal := t.Data[0]
+	for _, value := range t.Data[1:] {
+		if value > maxVal {
+			maxVal = value
+		}
+	}
+
+	sum := 0.0
+	for i, value := range t.Data {
+		exaggerated[i] = math.Exp(value - maxVal)
+		sum += exaggerated[i]
+	}
+
+	if sum == 0 || math.IsInf(sum, 0) || math.IsNaN(sum) {
+		return nil, errors.New("invalid softmax denominator")
+	}
+
+	for i, value := range exaggerated {
+		resultData[i] = value / sum
+	}
+
+	return &Tensor{
+		Data:  resultData,
+		Shape: t.Shape,
+	}, nil
+}
+
+// ArgMax returns the index of the largest value in a tensor.
+func ArgMax(t *Tensor) (int, error) {
+	if t == nil {
+		return -1, errors.New("tensor cannot be nil")
+	}
+	if len(t.Data) == 0 {
+		return -1, errors.New("tensor data cannot be empty")
+	}
+
+	maxIndex := 0
+	maxValue := t.Data[0]
+
+	for i := 1; i < len(t.Data); i++ {
+		if t.Data[i] > maxValue {
+			maxValue = t.Data[i]
+			maxIndex = i
+		}
+	}
+
+	return maxIndex, nil
 }
