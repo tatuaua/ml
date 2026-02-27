@@ -1,66 +1,74 @@
-# Simple Feed-Forward Neural Network for Text Generation
+# Simple Feed-Forward Neural Network (Go)
 
-A minimal FNN that predicts the next token given a context window of previous tokens.
+Character-level feed-forward neural network for next-token prediction and text generation.
 
-## How It Works
+## Current Status
 
-1. Take the last N tokens as context
-2. Convert each token to a vector (embedding lookup)
-3. Flatten into one long vector
-4. Pass through hidden layer with activation
-5. Project to vocabulary size
-6. Convert to probabilities
-7. Pick the most likely next token
+Implemented and working in the current codebase:
 
-## Architecture
+- Character vocabulary building and encode/decode
+- Sliding-window dataset creation
+- Embedding lookup + flatten
+- Two-layer MLP (`Linear -> ReLU -> Linear`)
+- Softmax + cross-entropy loss
+- Full backward pass (manual gradients)
+- SGD updates with gradient clipping
+- Mini-batch training loop with per-batch logging
+- Greedy generation with `ArgMax`
+- Parallelized tensor ops / forward-backward hotspots using goroutines
+
+## Model Architecture
 
 ```
-Input: [token_1, token_2, ..., token_N]
-         ↓
-    Embedding Lookup
-         ↓
-    [N × embed_dim] matrix
-         ↓
-    Flatten to 1D vector
-         ↓
-    Linear Layer (weights + bias)
-         ↓
-    ReLU Activation
-         ↓
-    Linear Layer (weights + bias)
-         ↓
-    Softmax → probabilities
-         ↓
-    Argmax → next token
+Input context (N chars)
+  -> Embedding lookup
+  -> Flatten
+  -> Linear (W1, B1)
+  -> ReLU
+  -> Linear (W2, B2)
+  -> Softmax probabilities
+  -> ArgMax next token
 ```
 
-## Required Functions
+## Default Hyperparameters
 
-| Function | Purpose |
-|----------|---------|
-| **Lookup** | Retrieve embedding vectors by token ID |
-| **Flatten** | Reshape 2D tensor to 1D |
-| **MatMul** | Matrix multiplication for linear layers |
-| **Add** | Add bias vectors |
-| **ReLU** | Activation function: max(0, x) |
-| **Softmax** | Convert logits to probabilities |
-| **Argmax** | Select highest probability token |
+- `contextSize = 8`
+- `embedDim = 10`
+- `hiddenDim = 128`
+- `batchSize = 32`
+- `learningRate = 0.1`
+- `epochs = 10`
+- `clipThresh = 5.0`
+- `genLength = 100`
 
-## Key Concepts
+Defined in `main.go`.
 
-**Embedding**: A lookup table mapping token IDs to dense vectors. Each row is a learnable representation of one token.
+## Project Files
 
-**Linear Layer**: `output = input × weights + bias`. The core building block of neural networks.
+- `main.go` - data loading, model definition, forward/backward, training loop, generation
+- `tensor.go` - tensor type and ops (`MatMul`, `Lookup`, `Flatten`, `ReLU`, `SoftMax`, `ArgMax`, etc.)
+- `tensor_test.go` - unit tests for core tensor operations
+- `data/input.txt` - training corpus
+- `run.ps1` - runs tests and then starts training/generation
 
-**ReLU**: Introduces non-linearity. Without it, stacked linear layers collapse to a single linear transformation.
+## Run
 
-**Softmax**: Converts raw scores to a probability distribution that sums to 1. Uses exp(x)/sum(exp(x)) with numerical stability tricks.
+### PowerShell
 
-**Argmax**: Greedy decoding—simply pick the token with highest probability.
+```powershell
+./run.ps1
+```
 
-## Limitations
+### Manual
+
+```powershell
+go test ./...
+go run .
+```
+
+## Notes / Limitations
 
 - Fixed context window (no long-range memory)
-- No attention mechanism
-- Quality depends heavily on training data and hyperparameters
-- This implementation is inference-only (no training)
+- Character-level model (not tokenized words/subwords)
+- Greedy decoding only (no sampling/top-k/top-p)
+- No checkpoint save/load yet
