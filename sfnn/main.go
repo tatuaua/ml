@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"runtime"
 	"sort"
 	"sync"
@@ -159,12 +160,12 @@ func NewModel(vocabSize int) *Model {
 
 // ForwardCache stores intermediate values for backprop
 type ForwardCache struct {
-	TokenIDs   [][]int  // (B, N)
-	Embedded   *Tensor  // (B, N*embedDim)
-	HiddenPre  *Tensor  // (B, hiddenDim) pre-ReLU
-	HiddenPost *Tensor  // (B, hiddenDim) post-ReLU
-	Logits     *Tensor  // (B, vocabSize)
-	Probs      *Tensor  // (B, vocabSize)
+	TokenIDs   [][]int // (B, N)
+	Embedded   *Tensor // (B, N*embedDim)
+	HiddenPre  *Tensor // (B, hiddenDim) pre-ReLU
+	HiddenPost *Tensor // (B, hiddenDim) post-ReLU
+	Logits     *Tensor // (B, vocabSize)
+	Probs      *Tensor // (B, vocabSize)
 }
 
 // Forward computes model output for a batch with parallel processing
@@ -582,9 +583,28 @@ func (m *Model) Generate(vocab *Vocabulary, prompt string, length int) string {
 	return result
 }
 
+// readTrainingData tries common locations so runs work from either repo root or sfnn/.
+func readTrainingData() ([]byte, error) {
+	paths := []string{
+		filepath.Join("data", "input.txt"),
+		filepath.Join("..", "data", "input.txt"),
+	}
+
+	var lastErr error
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		if err == nil {
+			return data, nil
+		}
+		lastErr = err
+	}
+
+	return nil, fmt.Errorf("could not find input.txt in expected locations (%v): %w", paths, lastErr)
+}
+
 func main() {
 	// Load training data
-	data, err := os.ReadFile("data/input.txt")
+	data, err := readTrainingData()
 	if err != nil {
 		fmt.Println("Error loading data:", err)
 		return
