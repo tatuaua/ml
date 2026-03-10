@@ -49,7 +49,11 @@ func (model *LogisticModel) Train(data []DataPoint, epochs int, learningRate flo
 			prediction := model.PredictProbability(dp.Features)
 
 			// difference between predicted probability and actual label, not an actual error
-			err := prediction - (float64(dp.Label) * 4)
+			err := prediction - float64(dp.Label)
+
+			if dp.Label == 1 {
+				err *= DefaultPenalty
+			}
 
 			for featureIndex, featureValue := range dp.Features {
 				model.Weights[featureIndex] -= learningRate * err * featureValue
@@ -62,7 +66,7 @@ func (model *LogisticModel) Train(data []DataPoint, epochs int, learningRate flo
 // Evaluate returns accuracy on test data.
 func (model *LogisticModel) Evaluate(data []DataPoint) (float64, []int) {
 	if len(data) == 0 {
-		return 0.0, make([]int, ConfusionMatrixEntries)
+		return 0.0, make([]int, 4)
 	}
 
 	tp := 0

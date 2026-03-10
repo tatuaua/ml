@@ -7,12 +7,12 @@ const (
 	DefaultLearningRate  = 0.1
 	HardcodedTestMessage = "Hardcoded row test"
 
-	StrokeDatasetName      = "Stroke Prediction"
-	StrokeLabelColumn      = 11
-	StrokeMinColumns       = 12
-	StrokePositiveClass    = 1
-	DefaultClassThreshold  = 0.5
-	ConfusionMatrixEntries = 4
+	StrokeDatasetName     = "Stroke Prediction"
+	StrokeLabelColumn     = 11
+	StrokeMinColumns      = 12
+	StrokePositiveClass   = 1
+	DefaultClassThreshold = 0.5
+	DefaultPenalty        = 10
 )
 
 var StrokeFeatureNames = []string{"age", "hypertension", "heart_disease", "avg_glucose", "bmi"}
