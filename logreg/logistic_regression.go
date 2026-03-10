@@ -37,7 +37,7 @@ func main() {
 	config := StrokeDatasetConfig()
 
 	// 2. Load and parse data
-	records, err := LoadCSV("../data/healthcare-dataset-stroke-data.csv")
+	records, err := LoadCSV(DatasetCSVPath)
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +51,7 @@ func main() {
 	// 3. Shuffle and split
 	rng := rand.New(rand.NewSource(time.Now().UnixNano()))
 	shuffled := ShuffleData(data, rng)
-	trainData, testData := TrainTestSplit(shuffled, 0.8)
+	trainData, testData := TrainTestSplit(shuffled, DefaultTrainRatio)
 
 	// 4. Fit scaler on training data and transform both sets
 	scaler := FitScaler(trainData)
@@ -63,17 +63,29 @@ func main() {
 
 	// 5. Train model
 	model := NewLogisticModel(config)
-	model.Train(trainData, 100, 0.1)
+	model.Train(trainData, DefaultEpochs, DefaultLearningRate)
 
 	// 6. Evaluate
-	accuracy := model.Evaluate(testData)
+	accuracy, confusion := model.Evaluate(testData)
 	fmt.Printf("Test accuracy: %.2f%%\n", accuracy*100)
+	fmt.Printf("Confusion matrix (rows=actual, cols=predicted):\n")
+	fmt.Printf("                Pred 0  Pred 1\n")
+	fmt.Printf("Actual 0 (TN/FP): %6d  %6d\n", confusion[1], confusion[2])
+	fmt.Printf("Actual 1 (FN/TP): %6d  %6d\n", confusion[3], confusion[0])
 
-	// Example prediction
-	if len(testData) > 0 {
-		prob := model.PredictProbability(testData[0].Features)
-		fmt.Printf("Example: predicted=%.2f (guess=%d), actual=%d\n",
-			prob, model.Predict(testData[0].Features), testData[0].Label)
+	// Temporary hardcoded test row.
+	hardcodedRow := HardcodedTestRow
+	testConfig := config
+	testConfig.SkipHeader = false
+	hardcodedData := LoadDataset(testConfig, [][]string{hardcodedRow})
+	if len(hardcodedData) == 1 {
+		scaler.Transform(hardcodedData)
+		prob := model.PredictProbability(hardcodedData[0].Features)
+		fmt.Printf("%s: predicted=%.2f (guess=%d), actual=%d\n",
+			HardcodedTestMessage,
+			prob, model.Predict(hardcodedData[0].Features), hardcodedData[0].Label)
+	} else {
+		fmt.Printf("%s: parse failed\n", HardcodedTestMessage)
 	}
 
 	model.PrintWeights()

@@ -36,8 +36,8 @@ func (model *LogisticModel) PredictProbability(features []float64) float64 {
 
 // Predict returns 0 or 1 based on threshold (default 0.5).
 func (model *LogisticModel) Predict(features []float64) int {
-	if model.PredictProbability(features) > 0.5 {
-		return 1
+	if model.PredictProbability(features) > DefaultClassThreshold {
+		return StrokePositiveClass
 	}
 	return 0
 }
@@ -47,7 +47,9 @@ func (model *LogisticModel) Train(data []DataPoint, epochs int, learningRate flo
 	for range epochs {
 		for _, dp := range data {
 			prediction := model.PredictProbability(dp.Features)
-			err := prediction - float64(dp.Label)
+
+			// difference between predicted probability and actual label, not an actual error
+			err := prediction - (float64(dp.Label) * 4)
 
 			for featureIndex, featureValue := range dp.Features {
 				model.Weights[featureIndex] -= learningRate * err * featureValue
@@ -58,18 +60,35 @@ func (model *LogisticModel) Train(data []DataPoint, epochs int, learningRate flo
 }
 
 // Evaluate returns accuracy on test data.
-func (model *LogisticModel) Evaluate(data []DataPoint) float64 {
+func (model *LogisticModel) Evaluate(data []DataPoint) (float64, []int) {
 	if len(data) == 0 {
-		return 0.0
+		return 0.0, make([]int, ConfusionMatrixEntries)
 	}
+
+	tp := 0
+	tn := 0
+	fp := 0
+	fn := 0
 
 	correct := 0
 	for _, dp := range data {
 		if model.Predict(dp.Features) == dp.Label {
 			correct++
+			if dp.Label == StrokePositiveClass {
+				tp++
+			} else {
+				tn++
+			}
+		} else {
+			if dp.Label == StrokePositiveClass {
+				fn++
+			} else {
+				fp++
+			}
 		}
 	}
-	return float64(correct) / float64(len(data))
+
+	return float64(correct) / float64(len(data)), []int{tp, tn, fp, fn}
 }
 
 // PrintWeights displays learned weights.

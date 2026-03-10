@@ -25,11 +25,11 @@ func (config DatasetConfig) NumFeatures() int {
 // StrokeDatasetConfig returns the config for the healthcare stroke dataset.
 func StrokeDatasetConfig() DatasetConfig {
 	return DatasetConfig{
-		Name:           "Stroke Prediction",
-		FeatureNames:   []string{"age", "hypertension", "heart_disease", "avg_glucose", "bmi"},
-		FeatureColumns: []int{2, 3, 4, 8, 9},
-		LabelColumn:    11,
+		Name:           StrokeDatasetName,
+		FeatureNames:   StrokeFeatureNames,
+		FeatureColumns: StrokeFeatureColumns,
+		LabelColumn:    StrokeLabelColumn,
 		SkipHeader:     true,
-		MinColumns:     12,
+		MinColumns:     StrokeMinColumns,
 	}
 }
